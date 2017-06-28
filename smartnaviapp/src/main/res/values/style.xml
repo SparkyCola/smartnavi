@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
-
     <style name="AudioFileInfoOverlayText">
         <item name="android:paddingLeft">0px</item>
         <item name="android:paddingBottom">0px</item>
@@ -11,7 +10,11 @@
         <item name="android:shadowDy">1</item>
         <item name="android:shadowRadius">1</item>
     </style>
-
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
     <style name="buttonText">
         <item name="android:paddingLeft">0px</item>
         <item name="android:paddingBottom">0px</item>

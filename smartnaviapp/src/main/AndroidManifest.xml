@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.ilm.sandwich"
+    package="com.mattis.sandwich"
     android:installLocation="auto"
     android:versionCode="40"
     android:versionName="2.4.0">
@@ -17,16 +17,14 @@
     <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
-    <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
 
     <application
-        android:name=".tools.AnalyticsApplication"
+        android:name="com.mattis.sandwich.tools.AnalyticsApplication"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name">
-        <uses-library android:name="com.google.android.maps" />
 
         <activity
-            android:name=".Splashscreen"
+            android:name="com.mattis.sandwich.Splashscreen"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar">
@@ -36,26 +34,26 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".GoogleMap"
+            android:name="com.mattis.sandwich.Map"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
+            android:theme="@style/Base.Theme.AppCompat.Light.DarkActionBar" />
         <activity
-            android:name=".Info"
+            android:name="com.mattis.sandwich.Info"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Base.Theme.AppCompat.Light.DarkActionBar" />
         <activity
-            android:name=".BackgroundService"
+            android:name="com.mattis.sandwich.BackgroundService"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Base.Theme.AppCompat.Light.DarkActionBar" />
         <activity
-            android:name=".Settings"
+            android:name="com.mattis.sandwich.Settings"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Base.Theme.AppCompat.Light.DarkActionBar" />
         <activity
-            android:name=".Webview"
+            android:name="com.mattis.sandwich.Webview"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Base.Theme.AppCompat.Light.DarkActionBar" />
