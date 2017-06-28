@@ -68,10 +68,9 @@ package com.mattis.sandwich;//package com.mattis.sandwich.tools;
         import com.mattis.sandwich.fragments.RatingFragment;
         import com.mattis.sandwich.fragments.TutorialFragment;
         import com.mattis.sandwich.sensors.Core;
+        import com.mattis.sandwich.sensors.ImprovedOrientationSensor2Provider;
         import com.mattis.sandwich.tools.Config;
         import com.mattis.sandwich.tools.HttpRequests;
-        ///TODO: all the Locationer stuff
-        //import com.mattis.sandwich.tools.Locationer;
         import com.mattis.sandwich.tools.Locationer;
         import com.mattis.sandwich.tools.PlacesAutoComplete;
         import com.mattis.sandwich.tools.PlacesTextSearch;
@@ -91,10 +90,17 @@ package com.mattis.sandwich;//package com.mattis.sandwich.tools;
         import org.osmdroid.views.overlay.Overlay;
         import org.osmdroid.views.overlay.OverlayItem;
         import org.osmdroid.views.overlay.Polyline;
+        import org.osmdroid.views.overlay.compass.CompassOverlay;
+        import org.osmdroid.views.overlay.compass.IOrientationProvider;
+        import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider;
 
         import java.util.ArrayList;
+        import java.util.Calendar;
+        import java.util.Date;
         import java.util.List;
         import java.util.Locale;
+        import java.util.Random;
+        import java.util.SimpleTimeZone;
 
         import static com.mattis.sandwich.R.drawable.finish2;
         import static com.mattis.sandwich.R.drawable.ic_maps_indicator_current_position_anim_ohne;
@@ -134,9 +140,9 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
     private static GeoPoint startGeoPoint;
     private static GeoPoint destGeoPoint;
     private static float oldZoomLevel;
-    private static Marker currentPosition;
+    //private static Marker theMarker;
     private static Marker current_position_anim_ohne;
-    private Marker actualMarker;
+    private Marker theMarker;
     private static boolean brightPoint;
     private static Marker destMarker;
     private static boolean routeHasBeenDrawn = false;
@@ -169,8 +175,12 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
     private FloatingActionButton fab;
     private MapView map;
     private IMapController mapController;
-    private ArrayList<OverlayItem> mapItems;
-    private Overlay postionOverlay;
+    private CompassOverlay mCompassOverlay;
+    public boolean gyroExists = false;
+    public ImprovedOrientationSensor2Provider mOrientationProvider;
+    private SensorManager mSensorManager;
+
+    private Calendar calendar = Calendar.getInstance();
 
     public static double computeDistanz(double lat, double lon) {
         // Entfernung bzw. Distanz zur eigenen aktuellen Position
@@ -184,8 +194,8 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
     public void setPosition(boolean follow) {
         startGeoPoint = new GeoPoint(Core.startLat, Core.startLon);
         try {
-            actualMarker.setPosition(startGeoPoint);
-            actualMarker.setAlpha(1f);
+            theMarker.setPosition(startGeoPoint);
+            //theMarker.setAlpha(1f);
         } catch (Exception e) {
             if (BuildConfig.debug)
                 e.printStackTrace();
@@ -223,12 +233,6 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_googlemap);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        //toolbar = (Toolbar) findViewById(R.id.toolbar_map); // Attaching the layout to the toolbar object
-        //setSupportActionBar(toolbar);                   // Setting toolbar as the ActionBar with setSupportActionBar() call<
-
-        // Obtain the shared Tracker instance.
-        /*AnalyticsApplication application = (AnalyticsApplication) getApplication();
-        mTracker = application.getDefaultTracker();*/
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -277,18 +281,31 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
         mapController.setCenter(startPoint);
         mLocationer = new Locationer(com.mattis.sandwich.Map.this);
 
-        /*actualMarker = new Marker(map);
-        actualMarker.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
-        map.getOverlays().add(actualMarker);*/
+        /*theMarker = new Marker(map);
+        theMarker.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
+        map.getOverlays().add(theMarker);*/
 
-        currentPosition = new Marker(map);
-        currentPosition.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
-        map.getOverlays().add(currentPosition);
+        mSensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
+
+
+        if (mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
+            gyroExists = true;
+            mOrientationProvider = new ImprovedOrientationSensor2Provider((SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE));
+        }
+
+        mCompassOverlay = new CompassOverlay(ctx,new InternalCompassOrientationProvider(ctx),map);
+        mCompassOverlay.enableCompass();
+        map.getOverlays().add(mCompassOverlay);
+
+        theMarker = new Marker(map);
+        theMarker.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
+        map.getOverlays().add(theMarker);
+        theMarker.setRotation(180);
 
         current_position_anim_ohne = new Marker(map);
-        current_position_anim_ohne.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_anim_ohne));
+        /*current_position_anim_ohne.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_anim_ohne));
         map.getOverlays().add(current_position_anim_ohne);
-        current_position_anim_ohne.setEnabled(false);
+        current_position_anim_ohne.setEnabled(false);*/
     }
 
     /*@Override
@@ -612,26 +629,26 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
         Log.d("created", "all markers inivisible");
         GeoPoint northPoleHideout = new GeoPoint(90.0D, 0.0D);
         ///TODO: check alpha
-        destMarker = new Marker(map);
+        /*destMarker = new Marker(map);
         destMarker.setPosition(northPoleHideout);
         destMarker.setIcon(getResources().getDrawable(finish2));
         map.getOverlays().add(destMarker);
         //make the marker invisible
-        destMarker.setAlpha(1f);
+        destMarker.setAlpha(1f);*/
 
-        currentPosition = new Marker(map);
-        currentPosition.setPosition(northPoleHideout);
-        currentPosition.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
-        currentPosition.setAnchor(0.5f,0.5f);
-        map.getOverlays().add(currentPosition);
-        currentPosition.setAlpha(1f);
+        /*theMarker = new Marker(map);
+        theMarker.setPosition(northPoleHideout);
+        theMarker.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_ohne));
+        theMarker.setAnchor(0.5f,0.5f);
+        map.getOverlays().add(theMarker);
+        //theMarker.setAlpha(1f);*/
 
-        current_position_anim_ohne = new Marker(map);
+        /*current_position_anim_ohne = new Marker(map);
         current_position_anim_ohne.setPosition(northPoleHideout);
         current_position_anim_ohne.setIcon(getResources().getDrawable(ic_maps_indicator_current_position_anim_ohne));
         current_position_anim_ohne.setAnchor(0.5f,0.5f);
         map.getOverlays().add(current_position_anim_ohne);
-        current_position_anim_ohne.setAlpha(1f);
+        current_position_anim_ohne.setAlpha(1f);*/
     }
 
     public boolean isOnline() {
@@ -761,7 +778,7 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
         Core.startLon = longpressLocation.longitude;*/
         Core.stepCounter++;
 
-        //actualMarker.setPosition(longpressLocation);
+        //theMarker.setPosition(longpressLocation);
         setFollowOn();
         // Wichtig für locationer, damit der das berücksichtigen kann
         userHasSetByTouch = true;
@@ -773,41 +790,54 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
         GeoPoint newPos = new GeoPoint(Core.startLat, Core.startLon);
 
         try {
-            if (brightPoint || zoomLevel != oldZoomLevel) {
+            /*if (brightPoint || zoomLevel != oldZoomLevel) {
                 oldZoomLevel = zoomLevel;
                 brightPoint = false;
-                //actualMarker.setVisible(false);
-                //actualMarker.setEnabled(false);
-                currentPosition.setPosition(newPos);
-                //currentPosition.setVisible(true);
-                //currentPosition.setEnabled(true);
-                actualMarker = currentPosition;
+                //theMarker.setVisible(false);
+                //theMarker.setEnabled(false);
+                theMarker.setPosition(newPos);
+                //theMarker.setVisible(true);
+                //theMarker.setEnabled(true);
+                theMarker = theMarker;
             }
 
             if (Core.stepCounter != stepCounterOld) {
                 stepCounterOld = Core.stepCounter;
 
-                //actualMarker.setVisible(false);
-                //actualMarker.setEnabled(false);
+                //theMarker.setVisible(false);
+                //theMarker.setEnabled(false);
 
                 if (now % 2 != 0) {
-                    currentPosition.setPosition(newPos);
-                    //currentPosition.setVisible(true);
-                    //currentPosition.setEnabled(true);
-                    actualMarker = currentPosition;
+                    theMarker.setPosition(newPos);
+                    //theMarker.setVisible(true);
+                    //theMarker.setEnabled(true);
+                    theMarker = theMarker;
                     brightPoint = false;
                 } else {
                     current_position_anim_ohne.setPosition(newPos);
                     //current_position_anim_ohne.setVisible(true);
                     //current_position_anim_ohne.setEnabled(true);
-                    actualMarker = current_position_anim_ohne;
+                    //theMarker = current_position_anim_ohne;
                     brightPoint = true;
                 }
+            }*/
+            map.getOverlays().remove(theMarker);
+            map.getOverlays().add(theMarker);
+            if(!map.getOverlays().contains(theMarker))
+            {
+                Log.e("LOST", "theMarker from overlays, trying to add it again");
+                map.getOverlays().add(theMarker);
             }
-            actualMarker.setRotation(actualMarker.getRotation() * (-1));
+            if(!theMarker.isEnabled())
+                Log.e("THE Marker", "couldn't be enabled");
+            //theMarker.setRotation(theMarker.getRotation() * (-1));
             float rotation = (float) Core.azimuth;
-            actualMarker.setRotation(rotation);
-            //currentPosition.setEnabled(false);
+            Log.d("got azimut:", String.valueOf(rotation));
+            theMarker.setPosition(newPos);
+            theMarker.setRotation(rotation);
+            if(theMarker.getRotation() != rotation)
+                Log.e("TheMarker", "doesn't want to rotate!!");
+            //theMarker.setRotation(calendar.get(Calendar.SECOND));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -816,6 +846,7 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
                 // "Camera" points north
                 /*CameraPosition currentPlace = new CameraPosition.Builder().target(newPos).bearing(0.0F).tilt(0.0F).zoom(zoomLevel).build();
                 map.animateCamera(CameraUpdateFactory.newCameraPosition(currentPlace));*/
+                mapController.setCenter(newPos);
             }
         }
         now++;
@@ -827,11 +858,10 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
     public void setFirstPosition() {
         Log.d("firstPostion", String.valueOf(Core.startLat) + "," + String.valueOf(Core.startLon));
         startGeoPoint = new GeoPoint(Core.startLat, Core.startLon);
-        currentPosition.setPosition(startGeoPoint);
+        theMarker.setPosition(startGeoPoint);
         Log.d("tried to", "line 820");
-        //currentPosition.setVisible(true);
-        currentPosition.setEnabled(true);
-        actualMarker = currentPosition;
+        //theMarker.setVisible(true);
+        theMarker.setEnabled(true);
 
         if (Core.lastErrorGPS < 100) {
             mapController.setCenter(startGeoPoint);
@@ -861,7 +891,7 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
                 mapText.setText(getResources().getString(R.string.tx_06));
             }
         } else {
-            mapController.animateTo(startGeoPoint);
+            mapController.setCenter(startGeoPoint);
             mapController.zoomTo(13);
         }
         followMe = true;
@@ -1208,8 +1238,8 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
 
    private void showLongPressDialog() {
         try {
-            //actualMarker.setVisible(false);
-            actualMarker.setAlpha(1f);
+            //theMarker.setVisible(false);
+            //theMarker.setAlpha(1f);
         } catch (Exception e) {
             if (BuildConfig.debug)
                 e.printStackTrace();
@@ -1223,8 +1253,8 @@ public class Map extends AppCompatActivity implements Locationer.onLocationUpdat
             public void onClick(View v) {
                 longPressDialog.setVisibility(View.GONE);
                 try {
-                    //actualMarker.setVisible(true);
-                    actualMarker.setAlpha(1f);
+                    //theMarker.setVisible(true);
+                    //theMarker.setAlpha(1f);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

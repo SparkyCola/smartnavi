@@ -92,7 +92,7 @@ public class Core implements SensorEventListener {
     private static boolean startedToExport = false;
     private static long startTime;
     public boolean gyroExists = false;
-    private ImprovedOrientationSensor2Provider mOrientationProvider;
+    public ImprovedOrientationSensor2Provider mOrientationProvider;
     private SensorManager mSensorManager;
     private boolean alreadyWaitingForAutoCorrect = false;
     private int stepsToWait = 0;
